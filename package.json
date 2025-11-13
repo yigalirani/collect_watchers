@@ -1,0 +1,50 @@
+{
+    "name": "validator_try",
+    "version": "1.0.0",
+    "description": "",
+    "license": "ISC",
+    "author": "",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "types/src/index.d.ts",
+    "watchers": {
+        "common": {
+            "watch": [
+                "src",
+                "package.json"
+            ]
+        },
+        "tsc": {
+            "cmd": "npx tsc",
+            "watch": "tsconfig.json"
+        },
+        "build": {
+            "cmd": "node ./bin/run_build.ts"
+        },
+        "eslint": {
+            "env": {
+                "timing": 1
+            },
+            "cmd": "npx eslint . --debug --color",
+            "watch": "eslint.config.mjs"
+        }
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "node ./bin/run_build.ts"
+    },
+    "keywords": [],
+    "devDependencies": {
+        "@eslint/js": "9.39.1",
+        "@types/node": "24.10.0",
+        "esbuild": "0.25.12",
+        "eslint-plugin-import-x": "4.16.1",
+        "typescript": "5.9.3",
+        "typescript-eslint": "8.46.3"
+    },
+    "dependencies": {
+        "@yigal/base_types": "^1.1.1",
+        "@yigal/watch_runner": "^2.0.0",
+        "zod": "^4.1.12"
+    }
+}
