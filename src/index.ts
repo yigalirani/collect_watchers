@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z,ZodError} from "zod";
 import { promises as fs } from "fs";
 import * as path from "path";
-import { is_object,get_error,mkdir_write_file,read_json_object } from "@yigal/base_types";
-import { UnknownKeysParam } from "zod/v3";
+import { is_object,get_error,mkdir_write_file,read_json_object ,s2u} from "@yigal/base_types";
+
 export const WatchersSchema = z.record(
   z.string(),
   z.object({
@@ -21,7 +21,20 @@ interface Runner {
   env:Record<string,string>
   filter?:string
 }
-
+function parse_watchers(filename:string,pkgJson:s2u|undefined):Watchers{
+  if (pkgJson==null)
+    return{}
+  const {watchers}=pkgJson
+  if (watchers==null)
+    return {}
+  try{
+    return WatchersSchema.parse(watchers);
+  }catch(ex){
+      console.warn(`${filename}:${ex}`)
+  }
+  return {}
+  
+}
 export async function read_package_json(
   dirs: string[]
 ): Promise<Record<string, object>> {
@@ -37,7 +50,7 @@ export async function read_package_json(
       const pkgJson = await read_json_object(pkgPath,'package.json')
       if (pkgJson==null)
         continue
-      ans[dir]=pkgJson.watchers||{}
+      ans[dir]=parse_watchers(pkgPath,pkgJson)
       const {workspaces} = pkgJson
       if (!Array.isArray(workspaces))
         continue

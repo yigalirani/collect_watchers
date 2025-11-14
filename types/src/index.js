@@ -7,6 +7,20 @@ export const WatchersSchema = z.record(z.string(), z.object({
     env: z.record(z.string(), z.string()).optional(),
     filter: z.string().optional()
 }).strict());
+function parse_watchers(filename, pkgJson) {
+    if (pkgJson == null)
+        return {};
+    const { watchers } = pkgJson;
+    if (watchers == null)
+        return {};
+    try {
+        return WatchersSchema.parse(watchers);
+    }
+    catch (ex) {
+        console.warn(`${filename}:${ex}`);
+    }
+    return {};
+}
 export async function read_package_json(dirs) {
     const ans = {};
     async function f(dirs) {
@@ -19,7 +33,7 @@ export async function read_package_json(dirs) {
             const pkgJson = await read_json_object(pkgPath, 'package.json');
             if (pkgJson == null)
                 continue;
-            ans[dir] = pkgJson.watchers || {};
+            ans[dir] = parse_watchers(pkgPath, pkgJson);
             const { workspaces } = pkgJson;
             if (!Array.isArray(workspaces))
                 continue;
