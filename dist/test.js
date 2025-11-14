@@ -12649,6 +12649,19 @@ var WatchersSchema = external_exports.record(
     filter: external_exports.string().optional()
   }).strict()
 );
+function padRight(str, length, padChar = " ") {
+  if (str.length >= length) return str;
+  return str + padChar.repeat(length - str.length);
+}
+function format_zod_error(error46) {
+  const block = error46.issues.map((issue2) => {
+    const path2 = padRight(issue2.path.join("/"), 50);
+    const message = issue2.message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
+    return `  ${path2}:   ${message}`;
+  }).join("\n");
+  return `
+${block}`;
+}
 function parse_watchers(filename, pkgJson) {
   if (pkgJson == null)
     return {};
@@ -12658,7 +12671,10 @@ function parse_watchers(filename, pkgJson) {
   try {
     return WatchersSchema.parse(watchers);
   } catch (ex) {
-    console.warn(`${filename}:${ex}`);
+    if (ex instanceof ZodError)
+      console.warn(filename, format_zod_error(ex));
+    else
+      console.warn(`${filename}:${get_error(ex).message}`);
   }
   return {};
 }
@@ -12690,13 +12706,16 @@ async function read_package_json(dirs) {
 
 // src/test.ts
 async function get_package_json_length() {
-  const ans = await read_package_json(["C:\\yigal\\million_try3", "."]);
+  const ans = await read_package_json([
+    /*'C:\\yigal\\million_try3',*/
+    "."
+  ]);
   return Object.keys(ans).length;
 }
 if (import.meta.main) {
   void run_tests({
     k: "run on self",
-    v: 5,
+    v: 1,
     f: get_package_json_length
   });
 }

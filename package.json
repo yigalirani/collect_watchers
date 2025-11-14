@@ -12,11 +12,12 @@
             "watch": [
                 "src",
                 "package.json"
-            ]
+            ],
+            "cmd":""
         },
         "tsc": {
             "cmd": "npx tsc",
-            "watch": "tsconfig.json"
+            "watch": ["tsconfig.json"]
         },
         "build": {
             "cmd": "node ./bin/run_build.ts"
