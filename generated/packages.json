@@ -31,6 +31,14 @@
     "node": "build.mjs",
     "watch": "src"
   },
+  "C:\\yigal\\million_try3\\main": {
+    "node": "build.ts",
+    "watch": [
+      "./converter/dist/index.js",
+      "src",
+      "package.json"
+    ]
+  },
   "C:\\yigal\\million_try3\\filesrvr": {
     "build": {
       "node": "build.mjs",

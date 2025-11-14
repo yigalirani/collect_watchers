@@ -12547,14 +12547,19 @@ function date4(params) {
 config(en_default());
 
 // src/index.ts
-import { promises as fs } from "fs";
 import * as path from "path";
 
-// node_modules/@yigal/base_types/src/index.ts
+// ../base_types/src/index.ts
 var green = "\x1B[40m\x1B[32m";
 var red = "\x1B[40m\x1B[31m";
 var yellow = "\x1B[40m\x1B[33m";
 var reset = "\x1B[0m";
+function get_error(x) {
+  if (x instanceof Error)
+    return x;
+  const str = String(x);
+  return new Error(str);
+}
 function is_object(value) {
   if (value == null) return false;
   if (typeof value !== "object" && typeof value !== "function") return false;
@@ -12601,6 +12606,38 @@ Summary:  all ${passed} passed`);
     console.log(`
 Summary:  ${failed} failed, ${passed} passed`);
 }
+async function get_node() {
+  if (typeof window !== "undefined") {
+    throw new Error("getFileContents() requires Node.js");
+  }
+  const path2 = await import("node:path");
+  const fs = await import("node:fs/promises");
+  return { fs, path: path2 };
+}
+async function mkdir_write_file(filePath, data) {
+  const { path: path2, fs } = await get_node();
+  const directory = path2.dirname(filePath);
+  try {
+    await fs.mkdir(directory, { recursive: true });
+    await fs.writeFile(filePath, data);
+    console.log(`File '${filePath}' has been written successfully.`);
+  } catch (err) {
+    console.error("Error writing file", err);
+  }
+}
+async function read_json_object(filename, object_type) {
+  const { fs } = await get_node();
+  try {
+    const data = await fs.readFile(filename, "utf-8");
+    const ans = JSON.parse(data);
+    if (!is_object(ans))
+      throw `not a valid ${object_type}`;
+    return ans;
+  } catch (ex) {
+    console.warn(`${filename}:${get_error(ex)}.message`);
+    return void 0;
+  }
+}
 
 // src/index.ts
 var WatchersSchema = external_exports.record(
@@ -12612,28 +12649,6 @@ var WatchersSchema = external_exports.record(
     filter: external_exports.string().optional()
   }).strict()
 );
-async function mkdir_write_file(filePath, data) {
-  const directory = path.dirname(filePath);
-  try {
-    await fs.mkdir(directory, { recursive: true });
-    await fs.writeFile(filePath, data);
-    console.log(`File '${filePath}' has been written successfully.`);
-  } catch (err) {
-    console.error("Error writing file", err);
-  }
-}
-async function read_json_object(filename, object_type) {
-  try {
-    const data = await fs.readFile(filename, "utf-8");
-    const ans = JSON.parse(data);
-    if (!is_object(ans))
-      throw `not a valid ${object_type}`;
-    return ans;
-  } catch (ex) {
-    console.warn(`${filename}:get_error(ex).message`);
-    return void 0;
-  }
-}
 async function read_package_json(dirs) {
   const ans = {};
   async function f(dirs2) {
@@ -12656,7 +12671,7 @@ async function read_package_json(dirs) {
     }
   }
   await f(dirs);
-  await mkdir_write_file("packages.json", JSON.stringify(ans, null, 2));
+  await mkdir_write_file("generated/packages.json", JSON.stringify(ans, null, 2));
   return ans;
 }
 
@@ -12668,7 +12683,7 @@ async function get_package_json_length() {
 if (import.meta.main) {
   void run_tests({
     k: "run on self",
-    v: 4,
+    v: 5,
     f: get_package_json_length
   });
 }
