@@ -8,8 +8,7 @@ void run({
     'src',
     'package.json',
     'tsconfig.json', 
-    'bin',
-    'generated'
+    'bin'
   ]
 })
  

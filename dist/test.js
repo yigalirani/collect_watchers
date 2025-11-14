@@ -12640,25 +12640,47 @@ async function read_json_object(filename, object_type) {
 }
 
 // src/index.ts
+var WatcherSchema = external_exports.object({
+  cmd: external_exports.string(),
+  watch: external_exports.array(external_exports.string()),
+  env: external_exports.record(external_exports.string(), external_exports.string()).optional(),
+  filter: external_exports.string().optional()
+}).strict();
 var WatchersSchema = external_exports.record(
   external_exports.string(),
-  external_exports.object({
-    cmd: external_exports.string(),
-    watch: external_exports.array(external_exports.string()),
-    env: external_exports.record(external_exports.string(), external_exports.string()).optional(),
-    filter: external_exports.string().optional()
-  }).strict()
+  external_exports.union([WatcherSchema, external_exports.string()])
 );
 function padRight(str, length, padChar = " ") {
   if (str.length >= length) return str;
   return str + padChar.repeat(length - str.length);
 }
-function format_zod_error(error46) {
-  return error46.issues.map((issue2) => {
-    const path2 = padRight(issue2.path.join("/"), 50);
-    const message = issue2.message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
-    return `  ${path2}:   ${message}`;
-  }).join("\n");
+function format_message(path2, message) {
+  const fmt_message = message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
+  return `  ${padRight(path2.join("/"), 50)}:   ${fmt_message}`;
+}
+function format_zod_error(ex) {
+  const top = JSON.parse(ex);
+  const log = [];
+  function f(ar, acum_path) {
+    const { errors, message } = ar;
+    const path2 = ar.path;
+    if (Array.isArray(path2)) {
+      acum_path = [...acum_path, ...path2];
+    }
+    if (Array.isArray(errors)) {
+      for (const er of errors)
+        f(er, acum_path);
+      return;
+    }
+    if (Array.isArray(ar)) {
+      for (const er of ar)
+        f(er, acum_path);
+      return;
+    }
+    log.push(format_message(acum_path, message));
+  }
+  f(top[0], []);
+  return log.join("\n");
 }
 function parse_watchers(filename, pkgJson) {
   console.warn(`${green}${filename}${reset}`);
@@ -12671,7 +12693,7 @@ function parse_watchers(filename, pkgJson) {
     return WatchersSchema.parse(watchers);
   } catch (ex) {
     if (ex instanceof ZodError)
-      console.warn(format_zod_error(ex));
+      console.warn(format_zod_error(ex.message));
     else
       console.warn(get_error(ex).message);
   }

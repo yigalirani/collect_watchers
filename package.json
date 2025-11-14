@@ -19,9 +19,8 @@
             "cmd": "npx tsc",
             "watch": ["tsconfig.json"]
         },
-        "build": {
-            "cmd": "node ./bin/run_build.ts"
-        },
+        "build":  "node ./bin/run_build.ts",
+        
         "eslint": {
             "env": {
                 "timing": 1
