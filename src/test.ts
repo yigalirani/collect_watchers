@@ -1,5 +1,5 @@
 import {read_package_json} from './index.js'
-import {is_object} from '@yigal/base_types'
+import {is_object,Atom} from '@yigal/base_types'
 export function is_promise<T=void>(value: unknown): value is Promise<T> { ///ts(2677)
   if (!is_object(value))
     return false
@@ -15,35 +15,48 @@ async function resolve_maybe_promise<T>(a:MaybePromise<T>){
 }
       
 type TestFunc=()=>MaybePromise<boolean>
-async function run_tests(tests: Record<string, TestFunc>) {
+interface Test{
+  k:string,
+  v?:Atom,
+  f:()=>MaybePromise<Atom>
+}
+
+async function run_tests(...tests: Test[]) {
   let passed = 0
   let failed = 0
 
-  for (const [name, fn] of Object.entries(tests)) {
+  for (const {k,v,f} of tests) {
     try {
-      const result = await resolve_maybe_promise(fn())
-      
-      if (result) {
-        console.log(`✅ ${name}`)
+      const ret=f()
+      const effective_v=v??false
+      const resolved = await resolve_maybe_promise(ret)
+      if (resolved===effective_v){
+        console.log(`✅ ${k}:${effective_v}`)
         passed++
       } else {
-        console.error(`❌ ${name}`)
+        console.error(`❌ ${k}:${v}=>${resolved}`)
         failed++
       }
     } catch (err) {
-      console.error(`💥 ${name} threw an error:`, err)
+      console.error(`💥 ${k} threw an error:`, err)
       failed++
     }
   }
   console.log(`\nSummary: ${passed} passed, ${failed} failed.`)  
 }
 async function checkit(){
-  const packages=await read_package_json(['.'])
+  const packages=await read_package_json(['C:\\yigal\\million_try3'])
   return Object.keys(packages).length===3
+}
+async function get_package_json_length(){
+  const ans=await read_package_json(['C:\\yigal\\million_try3'])
+  return Object.keys(ans).length
 }
 if (import.meta.main) {
   void run_tests({
-    'run on self': checkit
+    k:'run on self',
+    v:3,
+    f:get_package_json_length
   })
 }
  

@@ -62,7 +62,7 @@ export async function read_package_json(
   async function f(dirs: string[]){
     for (const dir of dirs) {
       const pkgPath = path.resolve(dir, "package.json");
-      if (ans[pkgPath]!==null){
+      if (ans[pkgPath]!=null){
         console.warn(`${pkgPath}: skippin, already done`)
         continue
       }
