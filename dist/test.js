@@ -12654,15 +12654,14 @@ function padRight(str, length, padChar = " ") {
   return str + padChar.repeat(length - str.length);
 }
 function format_zod_error(error46) {
-  const block = error46.issues.map((issue2) => {
+  return error46.issues.map((issue2) => {
     const path2 = padRight(issue2.path.join("/"), 50);
     const message = issue2.message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
     return `  ${path2}:   ${message}`;
   }).join("\n");
-  return `
-${block}`;
 }
 function parse_watchers(filename, pkgJson) {
+  console.warn(`${green}${filename}${reset}`);
   if (pkgJson == null)
     return {};
   const { watchers } = pkgJson;
@@ -12672,9 +12671,9 @@ function parse_watchers(filename, pkgJson) {
     return WatchersSchema.parse(watchers);
   } catch (ex) {
     if (ex instanceof ZodError)
-      console.warn(filename, format_zod_error(ex));
+      console.warn(format_zod_error(ex));
     else
-      console.warn(`${filename}:${get_error(ex).message}`);
+      console.warn(get_error(ex).message);
   }
   return {};
 }

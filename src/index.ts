@@ -1,7 +1,7 @@
 import { z,ZodError} from "zod";
 import { promises as fs } from "fs";
 import * as path from "path";
-import { is_object,get_error,mkdir_write_file,read_json_object ,s2u,red,reset,yellow} from "@yigal/base_types";
+import { is_object,get_error,mkdir_write_file,read_json_object ,s2u,red,reset,yellow,green} from "@yigal/base_types";
 
 export const WatchersSchema = z.record(
   z.string(),
@@ -26,15 +26,16 @@ function padRight(str: string, length: number, padChar: string = ' '): string {
     return str + padChar.repeat(length - str.length);
 }
 function format_zod_error(error:ZodError){
-  const block=error.issues.map(issue=>{
+  return error.issues.map(issue=>{
     const path=padRight(issue.path.join('/'),50)
     const message=issue.message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`)
                 .replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
    return `  ${path}:   ${message}`
   }).join('\n')
-  return `\n${block}`
+ 
 }
 function parse_watchers(filename:string,pkgJson:s2u|undefined):Watchers{
+  console.warn(`${green}${filename}${reset}`)
   if (pkgJson==null)
     return{}
   const {watchers}=pkgJson
@@ -44,9 +45,9 @@ function parse_watchers(filename:string,pkgJson:s2u|undefined):Watchers{
     return WatchersSchema.parse(watchers);
   }catch(ex){
     if (ex instanceof ZodError)
-      console.warn(filename,format_zod_error(ex))
+      console.warn(format_zod_error(ex))
     else
-      console.warn(`${filename}:${get_error(ex).message}`)
+      console.warn(get_error(ex).message)
 
   }
   return {}

@@ -1,6 +1,6 @@
 import { z, ZodError } from "zod";
 import * as path from "path";
-import { get_error, mkdir_write_file, read_json_object, red, reset, yellow } from "@yigal/base_types";
+import { get_error, mkdir_write_file, read_json_object, red, reset, yellow, green } from "@yigal/base_types";
 export const WatchersSchema = z.record(z.string(), z.object({
     cmd: z.string(),
     watch: z.array(z.string()),
@@ -13,15 +13,15 @@ function padRight(str, length, padChar = ' ') {
     return str + padChar.repeat(length - str.length);
 }
 function format_zod_error(error) {
-    const block = error.issues.map(issue => {
+    return error.issues.map(issue => {
         const path = padRight(issue.path.join('/'), 50);
         const message = issue.message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`)
             .replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
         return `  ${path}:   ${message}`;
     }).join('\n');
-    return `\n${block}`;
 }
 function parse_watchers(filename, pkgJson) {
+    console.warn(`${green}${filename}${reset}`);
     if (pkgJson == null)
         return {};
     const { watchers } = pkgJson;
@@ -32,9 +32,9 @@ function parse_watchers(filename, pkgJson) {
     }
     catch (ex) {
         if (ex instanceof ZodError)
-            console.warn(filename, format_zod_error(ex));
+            console.warn(format_zod_error(ex));
         else
-            console.warn(`${filename}:${get_error(ex).message}`);
+            console.warn(get_error(ex).message);
     }
     return {};
 }
