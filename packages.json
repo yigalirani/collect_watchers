@@ -1,0 +1,67 @@
+{
+  "C:\\yigal\\million_try3": {
+    "autorestart": true,
+    "watch": [
+      "main/src",
+      "converter/src",
+      "filesrvr/src",
+      "package.json"
+    ],
+    "biome": {
+      "cmd": "biome lint",
+      "watch": "biome.json"
+    },
+    "oxlint": {
+      "npx": "oxlint --type-aware",
+      "watch": ".oxlintrc.json"
+    },
+    "tsc": {
+      "cmd": "tsc --build"
+    },
+    "eslint": {
+      "env": {
+        "TIMING": 1
+      },
+      "filter": "eslint_filter",
+      "npx": "eslint . --debug --color",
+      "watch": "eslint.config.mjs"
+    }
+  },
+  "C:\\yigal\\million_try3\\converter": {
+    "node": "build.mjs",
+    "watch": "src"
+  },
+  "C:\\yigal\\million_try3\\filesrvr": {
+    "build": {
+      "node": "build.mjs",
+      "watch": [
+        "src"
+      ]
+    },
+    "run": {
+      "node": "dist/index.js"
+    }
+  },
+  ".": {
+    "common": {
+      "watch": [
+        "src",
+        "package.json"
+      ]
+    },
+    "tsc": {
+      "cmd": "npx tsc",
+      "watch": "tsconfig.json"
+    },
+    "build": {
+      "cmd": "node ./bin/run_build.ts"
+    },
+    "eslint": {
+      "env": {
+        "timing": 1
+      },
+      "cmd": "npx eslint . --debug --color",
+      "watch": "eslint.config.mjs"
+    }
+  }
+}

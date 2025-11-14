@@ -12551,6 +12551,10 @@ import { promises as fs } from "fs";
 import * as path from "path";
 
 // node_modules/@yigal/base_types/src/index.ts
+var green = "\x1B[40m\x1B[32m";
+var red = "\x1B[40m\x1B[31m";
+var yellow = "\x1B[40m\x1B[33m";
+var reset = "\x1B[0m";
 function is_object(value) {
   if (value == null) return false;
   if (typeof value !== "object" && typeof value !== "function") return false;
@@ -12558,6 +12562,44 @@ function is_object(value) {
   if (value instanceof Set) return false;
   if (value instanceof Map) return false;
   return true;
+}
+function is_promise(value) {
+  if (!is_object(value))
+    return false;
+  const ans = typeof value.then === "function";
+  return ans;
+}
+async function resolve_maybe_promise(a) {
+  if (is_promise(a))
+    return await a;
+  return a;
+}
+async function run_tests(...tests) {
+  let passed = 0;
+  let failed = 0;
+  for (const { k, v, f } of tests) {
+    try {
+      const ret = f();
+      const effective_v = v ?? true;
+      const resolved = await resolve_maybe_promise(ret);
+      if (resolved === effective_v) {
+        console.log(`\u2705 ${k}: ${green}${effective_v}${reset}`);
+        passed++;
+      } else {
+        console.error(`\u274C ${k}:expected ${yellow}${effective_v}${reset}, got ${red}${resolved}${reset}`);
+        failed++;
+      }
+    } catch (err) {
+      console.error(`\u{1F4A5} ${k} threw an error:`, err);
+      failed++;
+    }
+  }
+  if (failed === 0)
+    console.log(`
+Summary:  all ${passed} passed`);
+  else
+    console.log(`
+Summary:  ${failed} failed, ${passed} passed`);
 }
 
 // src/index.ts
@@ -12570,6 +12612,16 @@ var WatchersSchema = external_exports.record(
     filter: external_exports.string().optional()
   }).strict()
 );
+async function mkdir_write_file(filePath, data) {
+  const directory = path.dirname(filePath);
+  try {
+    await fs.mkdir(directory, { recursive: true });
+    await fs.writeFile(filePath, data);
+    console.log(`File '${filePath}' has been written successfully.`);
+  } catch (err) {
+    console.error("Error writing file", err);
+  }
+}
 async function read_json_object(filename, object_type) {
   try {
     const data = await fs.readFile(filename, "utf-8");
@@ -12594,7 +12646,7 @@ async function read_package_json(dirs) {
       const pkgJson = await read_json_object(pkgPath, "package.json");
       if (pkgJson == null)
         continue;
-      ans[dir] = pkgJson;
+      ans[dir] = pkgJson.watchers || {};
       const { workspaces } = pkgJson;
       if (!Array.isArray(workspaces))
         continue;
@@ -12604,56 +12656,20 @@ async function read_package_json(dirs) {
     }
   }
   await f(dirs);
+  await mkdir_write_file("packages.json", JSON.stringify(ans, null, 2));
   return ans;
 }
 
 // src/test.ts
-function is_promise(value) {
-  if (!is_object(value))
-    return false;
-  const ans = typeof value.then === "function";
-  return ans;
-}
-async function resolve_maybe_promise(a) {
-  if (is_promise(a))
-    return await a;
-  return a;
-}
-async function run_tests(...tests) {
-  let passed = 0;
-  let failed = 0;
-  for (const { k, v, f } of tests) {
-    try {
-      const ret = f();
-      const effective_v = v ?? false;
-      const resolved = await resolve_maybe_promise(ret);
-      if (resolved === effective_v) {
-        console.log(`\u2705 ${k}:${effective_v}`);
-        passed++;
-      } else {
-        console.error(`\u274C ${k}:${v}=>${resolved}`);
-        failed++;
-      }
-    } catch (err) {
-      console.error(`\u{1F4A5} ${k} threw an error:`, err);
-      failed++;
-    }
-  }
-  console.log(`
-Summary: ${failed} failed, ${passed} passed`);
-}
 async function get_package_json_length() {
-  const ans = await read_package_json(["C:\\yigal\\million_try3"]);
+  const ans = await read_package_json(["C:\\yigal\\million_try3", "."]);
   return Object.keys(ans).length;
 }
 if (import.meta.main) {
   void run_tests({
     k: "run on self",
-    v: 3,
+    v: 4,
     f: get_package_json_length
   });
 }
-export {
-  is_promise
-};
 //# sourceMappingURL=test.js.map

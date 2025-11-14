@@ -43,10 +43,20 @@ function getCommonPrefix(paths: string[]): string {
   // Join back with "/" (or use path.join for platform-specific behavior)
   return commonParts.join("/");
 }
+async function mkdir_write_file(filePath:string,data:string){
+  const directory=path.dirname(filePath);
+  try{
+    await fs.mkdir(directory,{recursive:true});
+    await fs.writeFile(filePath,data);
+    console.log(`File '${filePath}' has been written successfully.`);
+  } catch (err){
+    console.error('Error writing file',err)
+  }
+}
 async function read_json_object(filename:string,object_type:string){
   try{
     const data=await fs.readFile(filename, "utf-8");
-    const ans=JSON.parse(data)
+    const ans=JSON.parse(data) as unknown
     if (!is_object(ans))
       throw `not a valid ${object_type}`
     return ans
@@ -70,7 +80,7 @@ export async function read_package_json(
       const pkgJson = await read_json_object(pkgPath,'package.json')
       if (pkgJson==null)
         continue
-      ans[dir]=pkgJson
+      ans[dir]=pkgJson.watchers||{}
       const {workspaces} = pkgJson
       if (!Array.isArray(workspaces))
         continue
@@ -81,5 +91,6 @@ export async function read_package_json(
     }
   }
   await f(dirs)
+  await mkdir_write_file('packages.json',JSON.stringify(ans,null,2))
   return ans
 }
