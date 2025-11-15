@@ -8,13 +8,10 @@
     "main": "dist/index.js",
     "types": "types/src/index.d.ts",
     "watchers": {
-        "common": {
             "watch": [
                 "src",
                 "package.json"
             ],
-            "cmd":""
-        },
         "tsc": {
             "cmd": "npx tsc",
             "watch": "tsconfig.json"
@@ -30,7 +27,7 @@
         }
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "node dist/test.js",
         "build": "node ./bin/run_build.ts"
     },
     "keywords": [],

@@ -7081,8 +7081,8 @@ var parsedTypeFromType = (t, data = void 0) => {
 var capitalizeFirstCharacter = (text) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
-function getUnitTypeFromNumber(number5) {
-  const abs = Math.abs(number5);
+function getUnitTypeFromNumber(number4) {
+  const abs = Math.abs(number4);
   const last = abs % 10;
   const last2 = abs % 100;
   if (last2 >= 11 && last2 <= 19 || last === 0)
@@ -12639,29 +12639,80 @@ async function read_json_object(filename, object_type) {
   }
 }
 
-// src/index.ts
-var WatcherSchema = external_exports.object({
-  cmd: external_exports.string(),
-  watch: external_exports.array(external_exports.string()),
-  env: external_exports.record(external_exports.string(), external_exports.union([external_exports.number(), external_exports.string()])).optional(),
-  filter: external_exports.string().optional()
-}).strict();
-var WatchersSchema = external_exports.record(
-  external_exports.string(),
-  external_exports.union([WatcherSchema, external_exports.string()])
-);
+// src/zod_error.ts
 function padRight(str, length, padChar = " ") {
   if (str.length >= length) return str;
   return str + padChar.repeat(length - str.length);
 }
-function format_message(path2, message) {
-  const fmt_message = message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
-  return `  ${padRight(path2.join("/"), 40)}: ${fmt_message}`;
+function format_message(input) {
+  let output = input;
+  output = output.replace(
+    /(expected)(.*?)(received)/i,
+    (_, exp, mid, rec) => exp + yellow + mid + reset + rec
+  );
+  output = output.replace(
+    /(received:)(.*)$/i,
+    (_, rec, after) => rec + red + after + reset
+  );
+  output = output.replace(/mandatory/gi, (match) => red + match + reset);
+  return output;
+}
+function processGroup(group, ans) {
+  if (group.length === 1) {
+    ans.push(group[0]);
+    return;
+  }
+  const path2 = group[0].path;
+  const msgs = group.map((g) => g.message);
+  const allUndefined = msgs.every((m) => m.trim().endsWith("undefined"));
+  if (allUndefined) {
+    ans.push({ path: path2, message: "missing mandatory field" });
+    return;
+  }
+  const regex = /^Invalid input: expected (.+), received (.+)$/;
+  const expected = [];
+  let received = null;
+  for (const m of msgs) {
+    const match = m.match(regex);
+    if (!match) {
+      for (const g of group) ans.push(g);
+      return;
+    }
+    const exp = match[1];
+    const rec = match[2];
+    expected.push(exp);
+    if (received === null) received = rec;
+    else if (received !== rec) {
+      for (const g of group) ans.push(g);
+      return;
+    }
+  }
+  const mergedExpected = expected.join(" or ");
+  ans.push({
+    path: path2,
+    message: `Invalid input: expected ${mergedExpected}, received: ${received}`
+  });
+}
+function consolidate_errors(log) {
+  const ans = [];
+  let last_path = "";
+  let group = [];
+  for (const e of log) {
+    if (e.path !== last_path) {
+      if (group.length > 0) processGroup(group, ans);
+      group = [e];
+      last_path = e.path;
+    } else {
+      group.push(e);
+    }
+  }
+  if (group.length) processGroup(group, ans);
+  return ans;
 }
 function format_zod_error(ex) {
   const top = JSON.parse(ex);
   const log = [];
-  function f(ar, acum_path) {
+  function f(ar, acum_path, level) {
     const { errors, message } = ar;
     const path2 = ar.path;
     if (Array.isArray(path2)) {
@@ -12669,19 +12720,43 @@ function format_zod_error(ex) {
     }
     if (Array.isArray(errors)) {
       for (const er of errors)
-        f(er, acum_path);
+        f(er, acum_path, level + 1);
       return;
     }
     if (Array.isArray(ar)) {
       for (const er of ar)
-        f(er, acum_path);
+        f(er, acum_path, level + 1);
       return;
     }
-    log.push(format_message(acum_path, message));
+    log.push({ path: acum_path.join("/"), message });
   }
-  f(top[0], []);
-  return log.join("\n");
+  f(top[0], [], 0);
+  const log2 = consolidate_errors(log);
+  return log2.map((x) => `${padRight(x.path, 40)}:${format_message(x.message)}`).join("\n");
 }
+
+// src/index.ts
+var WatcherSchema = external_exports.object({
+  cmd: external_exports.string(),
+  watch: external_exports.union([
+    external_exports.string(),
+    external_exports.array(external_exports.string())
+  ]),
+  env: external_exports.record(
+    external_exports.string(),
+    external_exports.union(
+      [
+        external_exports.number(),
+        external_exports.string()
+      ]
+    )
+  ).optional(),
+  filter: external_exports.string().optional()
+}).strict();
+var WatchersSchema = external_exports.record(
+  external_exports.string(),
+  external_exports.union([WatcherSchema, external_exports.string(), external_exports.array(external_exports.string())])
+);
 function parse_watchers(filename, pkgJson) {
   console.warn(`${green}${filename}${reset}`);
   if (pkgJson == null)
@@ -12727,16 +12802,13 @@ async function read_package_json(dirs) {
 
 // src/test.ts
 async function get_package_json_length() {
-  const ans = await read_package_json([
-    /*'C:\\yigal\\million_try3',*/
-    "."
-  ]);
+  const ans = await read_package_json(["C:\\yigal\\million_try3", "."]);
   return Object.keys(ans).length;
 }
 if (import.meta.main) {
   void run_tests({
     k: "run on self",
-    v: 1,
+    v: 5,
     f: get_package_json_length
   });
 }

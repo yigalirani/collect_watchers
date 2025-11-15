@@ -1,47 +1,20 @@
 import { z, ZodError } from "zod";
 import * as path from "path";
-import { get_error, mkdir_write_file, read_json_object, red, reset, yellow, green } from "@yigal/base_types";
+import { get_error, mkdir_write_file, read_json_object, reset, green } from "@yigal/base_types";
+import { format_zod_error } from './zod_error.js';
 export const WatcherSchema = z.object({
     cmd: z.string(),
-    watch: z.array(z.string()),
-    env: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+    watch: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    env: z.record(z.string(), z.union([
+        z.number(),
+        z.string()
+    ])).optional(),
     filter: z.string().optional()
 }).strict();
-export const WatchersSchema = z.record(z.string(), z.union([WatcherSchema, z.string()]));
-function padRight(str, length, padChar = ' ') {
-    if (str.length >= length)
-        return str;
-    return str + padChar.repeat(length - str.length);
-}
-function format_message(path, message) {
-    const fmt_message = message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`)
-        .replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
-    return `  ${padRight(path.join('/'), 40)}: ${fmt_message}`;
-}
-function format_zod_error(ex) {
-    const top = JSON.parse(ex);
-    const log = [];
-    function f(ar, acum_path) {
-        const { errors, message } = ar;
-        const path = ar.path;
-        if (Array.isArray(path)) {
-            acum_path = [...acum_path, ...path];
-        }
-        if (Array.isArray(errors)) {
-            for (const er of errors)
-                f(er, acum_path);
-            return;
-        }
-        if (Array.isArray(ar)) {
-            for (const er of ar)
-                f(er, acum_path);
-            return;
-        }
-        log.push(format_message(acum_path, message));
-    }
-    f(top[0], []);
-    return log.join('\n');
-}
+export const WatchersSchema = z.record(z.string(), z.union([WatcherSchema, z.string(), z.array(z.string())]));
 function parse_watchers(filename, pkgJson) {
     console.warn(`${green}${filename}${reset}`);
     if (pkgJson == null)
