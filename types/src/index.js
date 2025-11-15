@@ -4,7 +4,7 @@ import { get_error, mkdir_write_file, read_json_object, red, reset, yellow, gree
 export const WatcherSchema = z.object({
     cmd: z.string(),
     watch: z.array(z.string()),
-    env: z.record(z.string(), z.string()).optional(),
+    env: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
     filter: z.string().optional()
 }).strict();
 export const WatchersSchema = z.record(z.string(), z.union([WatcherSchema, z.string()]));
@@ -16,7 +16,7 @@ function padRight(str, length, padChar = ' ') {
 function format_message(path, message) {
     const fmt_message = message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`)
         .replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
-    return `  ${padRight(path.join('/'), 50)}:   ${fmt_message}`;
+    return `  ${padRight(path.join('/'), 40)}: ${fmt_message}`;
 }
 function format_zod_error(ex) {
     const top = JSON.parse(ex);

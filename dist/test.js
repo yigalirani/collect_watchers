@@ -7081,8 +7081,8 @@ var parsedTypeFromType = (t, data = void 0) => {
 var capitalizeFirstCharacter = (text) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
-function getUnitTypeFromNumber(number4) {
-  const abs = Math.abs(number4);
+function getUnitTypeFromNumber(number5) {
+  const abs = Math.abs(number5);
   const last = abs % 10;
   const last2 = abs % 100;
   if (last2 >= 11 && last2 <= 19 || last === 0)
@@ -12643,7 +12643,7 @@ async function read_json_object(filename, object_type) {
 var WatcherSchema = external_exports.object({
   cmd: external_exports.string(),
   watch: external_exports.array(external_exports.string()),
-  env: external_exports.record(external_exports.string(), external_exports.string()).optional(),
+  env: external_exports.record(external_exports.string(), external_exports.union([external_exports.number(), external_exports.string()])).optional(),
   filter: external_exports.string().optional()
 }).strict();
 var WatchersSchema = external_exports.record(
@@ -12656,7 +12656,7 @@ function padRight(str, length, padChar = " ") {
 }
 function format_message(path2, message) {
   const fmt_message = message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`).replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);
-  return `  ${padRight(path2.join("/"), 50)}:   ${fmt_message}`;
+  return `  ${padRight(path2.join("/"), 40)}: ${fmt_message}`;
 }
 function format_zod_error(ex) {
   const top = JSON.parse(ex);

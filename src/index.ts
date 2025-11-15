@@ -1,11 +1,11 @@
-import { z,ZodError} from "zod";
+import { number, z,ZodError} from "zod";
 import { promises as fs } from "fs";
 import * as path from "path";
 import { is_object,get_error,mkdir_write_file,read_json_object ,s2u,red,reset,yellow,green} from "@yigal/base_types";
 export const WatcherSchema= z.object({
   cmd: z.string(),
-  watch: z.array(z.string()),
-  env:z.record(z.string(),z.string()).optional(),
+  watch: z.union([z.string(),z.array(z.string())]),
+  env:z.record(z.string(),z.union([z.number(),z.string()])).optional(),
   filter:z.string().optional() 
 }).strict()
 
@@ -29,18 +29,18 @@ function padRight(str: string, length: number, padChar: string = ' '): string {
 function format_message(path:string[],message:string){
   const fmt_message= message.replace(/expected (\w+)/, (_, expectedWord) => `expected ${yellow}${expectedWord}${reset}`)
                 .replace(/received (\w+)/, (_, receivedWord) => `received ${red}${receivedWord}${reset}`);  
-   return `  ${padRight(path.join('/'),50)}:   ${fmt_message}`
+   return `  ${padRight(path.join('/'),40)}: ${fmt_message}`
 }
 
 function format_zod_error(ex:string){
-  const top:Array<s2u>=JSON.parse(ex)
+  const top=JSON.parse(ex) as Array<s2u>
 
   const log:string[]=[]
   function f(ar:s2u,acum_path:string[]){
     const {errors,message}=ar
-    const path=ar.path
+    const path=ar.path as string[]
     if (Array.isArray(path)){
-      acum_path=[...acum_path,...path]
+      acum_path=[...acum_path,...path] as string[]
     }
     if (Array.isArray(errors)){
       for (const er of errors)

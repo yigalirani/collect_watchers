@@ -14,5 +14,5 @@
     "moduleResolution":"nodenext"
   },
   "include": ["src/**/*","bin/**/*","eslint.config.mjs"],             // include all .ts files in src/
-  "exclude": ["node_modules", "dist","types"]  // avoid compiling output & deps
+  "exclude": ["node_modules", "dist","types/**/*"]  // avoid compiling output & deps
 }
