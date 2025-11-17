@@ -1,34 +1,17 @@
 {
   "C:\\yigal\\million_try3": {},
-  "C:\\yigal\\million_try3\\converter": {
-    "node": "build.mjs",
-    "watch": "src"
-  },
-  "C:\\yigal\\million_try3\\main": {
-    "node": "build.ts",
-    "watch": [
-      "./converter/dist/index.js",
-      "src",
-      "package.json"
-    ]
-  },
-  "C:\\yigal\\million_try3\\filesrvr": {},
-  ".": {
-    "watch": [
-      "src",
-      "package.json"
-    ],
-    "tsc": {
-      "cmd": "npx tsc",
-      "watch": "tsconfig.json"
+  "C:\\yigal\\million_try3\\converter": {},
+  "C:\\yigal\\million_try3\\main": {},
+  "C:\\yigal\\million_try3\\filesrvr": {
+    "build": {
+      "cmd": "node build.mjs",
+      "watch": [
+        "src"
+      ]
     },
-    "build": "node ./bin/run_build.ts",
-    "eslint": {
-      "cmd": "npx eslint . --debug --color",
-      "watch": "eslint.config.mjs",
-      "env": {
-        "timing": 1
-      }
+    "rund": {
+      "cmd": "node dist/index.js"
     }
-  }
+  },
+  ".": {}
 }

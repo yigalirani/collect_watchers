@@ -12738,25 +12738,17 @@ function format_zod_error(ex) {
 // src/index.ts
 var WatcherSchema = external_exports.object({
   cmd: external_exports.string(),
-  watch: external_exports.union([
-    external_exports.string(),
-    external_exports.array(external_exports.string())
-  ]),
-  env: external_exports.record(
-    external_exports.string(),
-    external_exports.union(
-      [
-        external_exports.number(),
-        external_exports.string()
-      ]
-    )
-  ).optional(),
-  filter: external_exports.string().optional()
+  watch: external_exports.array(external_exports.string()).optional(),
+  env: external_exports.record(external_exports.string(), external_exports.union([external_exports.string(), external_exports.number()])).optional()
 }).strict();
-var WatchersSchema = external_exports.record(
-  external_exports.string(),
-  external_exports.union([WatcherSchema, external_exports.string(), external_exports.array(external_exports.string())])
-);
+var WatchersRecordSchema = external_exports.record(external_exports.string(), WatcherSchema);
+var WatchersSimpleSchema = external_exports.object({
+  watch: external_exports.array(external_exports.string())
+}).strict();
+var WatchersSchema = external_exports.union([
+  WatchersRecordSchema,
+  WatchersSimpleSchema
+]);
 function parse_watchers(filename, pkgJson) {
   console.warn(`${green}${filename}${reset}`);
   if (pkgJson == null)
