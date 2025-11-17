@@ -1,7 +1,49 @@
 {
-  "C:\\yigal\\million_try3": {},
-  "C:\\yigal\\million_try3\\converter": {},
-  "C:\\yigal\\million_try3\\main": {},
+  "C:\\yigal\\million_try3": {
+    "watch": [
+      "main/src",
+      "converter/src",
+      "filesrvr/src",
+      "package.json"
+    ],
+    "biome": {
+      "cmd": "biome lint",
+      "watch": "biome.json"
+    },
+    "oxlint": {
+      "cmd": "npx oxlint --type-aware",
+      "watch": ".oxlintrc.json"
+    },
+    "tsc": {
+      "cmd": "tsc --build"
+    },
+    "eslint": {
+      "env": {
+        "TIMING": 1
+      },
+      "filter": "eslint_filter",
+      "cmd": "npx eslint . --debug --color",
+      "watch": "eslint.config.mjs"
+    }
+  },
+  "C:\\yigal\\million_try3\\converter": {
+    "build": {
+      "cmd": "build.mjs"
+    },
+    "watch": [
+      "src"
+    ]
+  },
+  "C:\\yigal\\million_try3\\main": {
+    "build": {
+      "cmd": "npx build.ts"
+    },
+    "watch": [
+      "./converter/dist/index.js",
+      "src",
+      "package.json"
+    ]
+  },
   "C:\\yigal\\million_try3\\filesrvr": {
     "build": {
       "cmd": "node build.mjs",
@@ -13,5 +55,27 @@
       "cmd": "node dist/index.js"
     }
   },
-  ".": {}
+  ".": {
+    "watch": [
+      "src",
+      "package.json"
+    ],
+    "tsc": {
+      "cmd": "npx tsc",
+      "watch": [
+        "tsconfig.json"
+      ]
+    },
+    "build": {
+      "cmd": "node ./bin/run_build.ts",
+      "watch": "./bin/run_build.ts"
+    },
+    "eslint": {
+      "env": {
+        "timing": 1
+      },
+      "cmd": "npx eslint . --debug --color",
+      "watch": "eslint.config.mjs"
+    }
+  }
 }

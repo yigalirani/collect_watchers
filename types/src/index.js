@@ -1,23 +1,49 @@
-import { z, ZodError } from "zod";
 import * as path from "path";
-import { get_error, mkdir_write_file, read_json_object, reset, green } from "@yigal/base_types";
-import { format_zod_error } from './zod_error.js';
-export const WatcherSchema = z.object({
-    cmd: z.string(),
-    watch: z.array(z.string()).optional(),
-    env: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-}).strict();
-// Record<string, Watcher>
-export const WatchersRecordSchema = z.record(z.string(), WatcherSchema);
-// { watch: string[] }
-export const WatchersSimpleSchema = z.object({
-    watch: z.array(z.string()),
-}).strict();
-// Union of the two possibilities
-export const WatchersSchema = z.union([
-    WatchersRecordSchema,
-    WatchersSimpleSchema,
-]);
+import { is_object, mkdir_write_file, read_json_object, reset, green } from "@yigal/base_types";
+function is_valid_watch(a) {
+    if (a == null)
+        return true;
+    if (typeof a === 'string')
+        return true;
+    if (!Array.isArray(a))
+        return false;
+    for (const x of a)
+        if (typeof x !== 'string')
+            return false;
+    return true;
+}
+function is_valid_watcher(a) {
+    if (!is_object(a))
+        return "expecting object";
+    if (!is_valid_watch(a.watch)) {
+        return 'watch: expecting string or array of strings';
+    }
+    if (typeof a.cmd !== 'string')
+        return "cmd is mandatory of string type";
+    for (const k of Object.keys(a))
+        if (!['watch', 'cmd', 'env', 'filter'].includes(k))
+            return `${k}:invalid key`;
+    return true;
+}
+function is_watchers2(a) {
+    if (!is_object(a))
+        return false;
+    const { watch } = a;
+    if (!is_valid_watch(watch)) {
+        console.log('watch: must be string or array of string');
+        return false;
+    }
+    for (const [k, v] of Object.entries(a)) {
+        if (k === 'watch')
+            continue;
+        const valid_watcher = is_valid_watcher(v);
+        if (valid_watcher !== true) {
+            console.log(`${k}: invalid watcher:${valid_watcher}`);
+            return false;
+        }
+    }
+    return true;
+}
 function parse_watchers(filename, pkgJson) {
     console.warn(`${green}${filename}${reset}`);
     if (pkgJson == null)
@@ -25,15 +51,10 @@ function parse_watchers(filename, pkgJson) {
     const { watchers } = pkgJson;
     if (watchers == null)
         return {};
-    try {
-        return WatchersSchema.parse(watchers);
-    }
-    catch (ex) {
-        if (ex instanceof ZodError)
-            console.warn(format_zod_error(ex.message));
-        else
-            console.warn(get_error(ex).message);
-    }
+    const ans = is_watchers2(watchers);
+    if (ans)
+        return watchers;
+    console.warn(ans);
     return {};
 }
 export async function read_package_json(dirs) {
