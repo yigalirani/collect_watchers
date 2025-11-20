@@ -1,11 +1,23 @@
 interface Watcher {
-    cmd: string;
     watch?: string[] | string;
     env?: Record<string, string | number>;
     filter?: string;
 }
 export type Watchers = Record<string, Watcher> | {
-    watch: string[];
+    $watch: string[];
 };
-export declare function read_package_json(dirs: string[]): Promise<Record<string, object>>;
+interface Runner extends Watcher {
+    cwd: string;
+    name: string;
+    script: string;
+}
+interface Folder {
+    name: string;
+    full_pathname: string;
+    folders: Array<Folder>;
+    runners: Array<Runner>;
+    watchers: Watchers;
+}
+export declare function getCommonPrefix(paths: string[]): string;
+export declare function read_package_json(full_pathnames: string[]): Promise<Folder>;
 export {};

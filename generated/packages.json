@@ -1,81 +1,109 @@
 {
-  "C:\\yigal\\million_try3": {
-    "watch": [
-      "main/src",
-      "converter/src",
-      "filesrvr/src",
-      "package.json"
-    ],
-    "biome": {
-      "cmd": "biome lint",
-      "watch": "biome.json"
+  "name": "root",
+  "full_pathname": "",
+  "folders": [
+    {
+      "runners": [
+        {
+          "watch": [
+            "src",
+            "package.json",
+            "tsconfig.json",
+            "bin/run_build.ts",
+            "dist/test.js"
+          ],
+          "name": "test",
+          "script": "node dist/test.js",
+          "cwd": "c:\\yigal\\collect_watchers"
+        },
+        {
+          "watch": [
+            "src",
+            "package.json",
+            "tsconfig.json",
+            "bin/run_build.ts",
+            "$watch",
+            "eslint.config.mjs"
+          ],
+          "filter": "eslint_filter",
+          "name": "eslint",
+          "script": "npx eslint . --debug --color",
+          "cwd": "c:\\yigal\\collect_watchers"
+        }
+      ],
+      "folders": [],
+      "name": "collect_watchers",
+      "full_pathname": "c:\\yigal\\collect_watchers",
+      "watchers": {
+        "$watch": [
+          "src",
+          "package.json",
+          "tsconfig.json",
+          "bin/run_build.ts"
+        ],
+        "test": "dist/test.js",
+        "eslint": {
+          "watch": [
+            "$watch",
+            "eslint.config.mjs"
+          ],
+          "filter": "eslint_filter"
+        }
+      }
     },
-    "oxlint": {
-      "cmd": "npx oxlint --type-aware",
-      "watch": ".oxlintrc.json"
-    },
-    "tsc": {
-      "cmd": "tsc --build"
-    },
-    "eslint": {
-      "env": {
-        "TIMING": 1
-      },
-      "filter": "eslint_filter",
-      "cmd": "npx eslint . --debug --color",
-      "watch": "eslint.config.mjs"
+    {
+      "runners": [],
+      "folders": [
+        {
+          "runners": [
+            {
+              "watch": [
+                "src",
+                "build.mjs",
+                "package.json"
+              ],
+              "name": "build",
+              "script": "node --watch-path ./src build.mjs",
+              "cwd": "c:\\yigal\\million_try3\\converter"
+            }
+          ],
+          "folders": [],
+          "name": "converter",
+          "full_pathname": "c:\\yigal\\million_try3\\converter",
+          "watchers": {
+            "build": [
+              "src",
+              "build.mjs",
+              "package.json"
+            ]
+          }
+        },
+        {
+          "runners": [],
+          "folders": [],
+          "name": "main",
+          "full_pathname": "c:\\yigal\\million_try3\\main",
+          "watchers": {
+            "$watch": [
+              "./converter/dist/index.js",
+              "src",
+              "package.json"
+            ]
+          }
+        },
+        {
+          "runners": [],
+          "folders": [],
+          "name": "filesrvr",
+          "full_pathname": "c:\\yigal\\million_try3\\filesrvr",
+          "watchers": {}
+        }
+      ],
+      "name": "million_try3",
+      "full_pathname": "c:\\yigal\\million_try3",
+      "watchers": {}
     }
-  },
-  "C:\\yigal\\million_try3\\converter": {
-    "build": {
-      "cmd": "build.mjs"
-    },
-    "watch": [
-      "src"
-    ]
-  },
-  "C:\\yigal\\million_try3\\main": {
-    "build": {
-      "cmd": "npx build.ts"
-    },
-    "watch": [
-      "./converter/dist/index.js",
-      "src",
-      "package.json"
-    ]
-  },
-  "C:\\yigal\\million_try3\\filesrvr": {
-    "build": {
-      "cmd": "node build.mjs",
-      "watch": [
-        "src"
-      ]
-    },
-    "rund": {
-      "cmd": "node dist/index.js"
-    }
-  },
-  ".": {
-    "watch": [
-      "src",
-      "package.json"
-    ],
-    "tsc": {
-      "cmd": "npx tsc",
-      "watch": [
-        "tsconfig.json"
-      ]
-    },
-    "build": {
-      "cmd": "node ./bin/run_build.ts",
-      "watch": "./bin/run_build.ts"
-    },
-    "eslint": {
-      "env": {
-        "timing": 1
-      },
-      "cmd": "npx eslint . --debug --color",
-      "watch": "eslint.config.mjs"
-    }
-  }
+  ],
+  "runners": [],
+  "watchers": {}
 }

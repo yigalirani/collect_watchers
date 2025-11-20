@@ -1,5 +1,5 @@
 // src/index.ts
-import * as path from "path";
+import * as path from "node:path";
 
 // ../base_types/src/index.ts
 var green = "\x1B[40m\x1B[32m";
@@ -35,19 +35,28 @@ async function run_tests(...tests) {
   let passed = 0;
   let failed = 0;
   for (const { k, v, f } of tests) {
+    const ek = (function() {
+      if (k != null)
+        return k;
+      const fstr = String(f);
+      const match = fstr.match(/(\(\) => )(.*)/);
+      if (match?.length === 3)
+        return match[2];
+      return;
+    })();
     try {
       const ret = f();
       const effective_v = v ?? true;
       const resolved = await resolve_maybe_promise(ret);
       if (resolved === effective_v) {
-        console.log(`\u2705 ${k}: ${green}${effective_v}${reset}`);
+        console.log(`\u2705 ${ek}: ${green}${effective_v}${reset}`);
         passed++;
       } else {
-        console.error(`\u274C ${k}:expected ${yellow}${effective_v}${reset}, got ${red}${resolved}${reset}`);
+        console.error(`\u274C ${ek}:expected ${yellow}${effective_v}${reset}, got ${red}${resolved}${reset}`);
         failed++;
       }
     } catch (err) {
-      console.error(`\u{1F4A5} ${k} threw an error:`, err);
+      console.error(`\u{1F4A5} ${ek} threw an error:`, err);
       failed++;
     }
   }
@@ -90,13 +99,7 @@ async function read_json_object(filename, object_type) {
     return void 0;
   }
 }
-
-// src/index.ts
-function is_valid_watch(a) {
-  if (a == null)
-    return true;
-  if (typeof a === "string")
-    return true;
+function is_string_array(a) {
   if (!Array.isArray(a))
     return false;
   for (const x of a)
@@ -104,29 +107,38 @@ function is_valid_watch(a) {
       return false;
   return true;
 }
+
+// src/index.ts
+function is_valid_watch(a) {
+  if (a == null)
+    return true;
+  if (typeof a === "string")
+    return true;
+  return is_string_array(a);
+}
 function is_valid_watcher(a) {
+  if (typeof a === "string" || is_string_array(a))
+    return true;
   if (!is_object(a))
     return "expecting object";
   if (!is_valid_watch(a.watch)) {
     return "watch: expecting string or array of strings";
   }
-  if (typeof a.cmd !== "string")
-    return "cmd is mandatory of string type";
   for (const k of Object.keys(a))
-    if (!["watch", "cmd", "env", "filter"].includes(k))
+    if (!["watch", "env", "filter"].includes(k))
       return `${k}:invalid key`;
   return true;
 }
 function is_watchers2(a) {
   if (!is_object(a))
     return false;
-  const { watch } = a;
-  if (!is_valid_watch(watch)) {
+  const { $watch } = a;
+  if (!is_valid_watch($watch)) {
     console.log("watch: must be string or array of string");
     return false;
   }
   for (const [k, v] of Object.entries(a)) {
-    if (k === "watch")
+    if (k === "$watch")
       continue;
     const valid_watcher = is_valid_watcher(v);
     if (valid_watcher !== true) {
@@ -137,7 +149,6 @@ function is_watchers2(a) {
   return true;
 }
 function parse_watchers(filename, pkgJson) {
-  console.warn(`${green}${filename}${reset}`);
   if (pkgJson == null)
     return {};
   const { watchers } = pkgJson;
@@ -149,35 +160,101 @@ function parse_watchers(filename, pkgJson) {
   console.warn(ans);
   return {};
 }
-async function read_package_json(dirs) {
-  const ans = {};
-  async function f(dirs2) {
-    for (const dir of dirs2) {
-      const pkgPath = path.resolve(dir, "package.json");
-      if (ans[pkgPath] != null) {
-        console.warn(`${pkgPath}: skippin, already done`);
-        continue;
+function parse_scripts(pkgJson) {
+  if (pkgJson == null)
+    return {};
+  const { scripts } = pkgJson;
+  if (scripts == null)
+    return {};
+  return scripts;
+}
+function normalize_watch(a) {
+  if (a == null)
+    return [];
+  if (typeof a === "string")
+    return [a];
+  return a;
+}
+function watchers_to_runners(pkgPath, watchers, scripts) {
+  const $watch = watchers.$watch;
+  const ans = [];
+  for (const [name, v] of Object.entries(watchers)) {
+    if (name === "$watch")
+      continue;
+    const watcher = (function() {
+      if (typeof v === "string" || is_string_array(v)) {
+        return { watch: normalize_watch(v) };
       }
-      const pkgJson = await read_json_object(pkgPath, "package.json");
-      if (pkgJson == null)
-        continue;
-      ans[dir] = parse_watchers(pkgPath, pkgJson);
-      const { workspaces } = pkgJson;
-      if (!Array.isArray(workspaces))
-        continue;
-      for (const workspace of workspaces)
-        if (typeof workspace === "string")
-          await f([path.join(dir, workspace)]);
+      return v;
+    })();
+    const script = scripts[name];
+    if (script == null) {
+      console.warn(`missing script ${name}`);
+      continue;
     }
+    const runner = (function() {
+      return {
+        ...watcher,
+        //i like this
+        name,
+        script,
+        cwd: path.dirname(pkgPath),
+        watch: [...normalize_watch($watch), ...normalize_watch(watcher.watch)]
+        //todo: dedup
+      };
+    })();
+    ans.push(runner);
   }
-  await f(dirs);
-  await mkdir_write_file("generated/packages.json", JSON.stringify(ans, null, 2));
   return ans;
+}
+async function read_package_json(full_pathnames) {
+  const folder_index = {};
+  async function f(full_pathname, name) {
+    const pkgPath = path.resolve(path.normalize(full_pathname), "package.json");
+    const d = path.resolve(full_pathname);
+    const exists = folder_index[d];
+    if (exists != null) {
+      console.warn(`${pkgPath}: skippin, already done`);
+      return exists;
+    }
+    const pkgJson = await read_json_object(pkgPath, "package.json");
+    if (pkgJson == null)
+      return null;
+    console.warn(`${green}${pkgPath}${reset}`);
+    const watchers = parse_watchers(pkgPath, pkgJson);
+    const scripts = parse_scripts(pkgJson);
+    const runners = watchers_to_runners(pkgPath, watchers, scripts);
+    const { workspaces } = pkgJson;
+    const folders2 = [];
+    if (is_string_array(workspaces))
+      for (const workspace of workspaces) {
+        const ret = await f(path.join(full_pathname, workspace), workspace);
+        if (ret != null)
+          folders2.push(ret);
+      }
+    const ans = { runners, folders: folders2, name, full_pathname, watchers };
+    return ans;
+  }
+  const folders = [];
+  for (const full_pathname of full_pathnames) {
+    const ret = await f(full_pathname, path.basename(full_pathname));
+    if (ret != null)
+      folders.push(ret);
+  }
+  const root = {
+    name: "root",
+    full_pathname: "",
+    folders,
+    runners: [],
+    watchers: {}
+  };
+  await mkdir_write_file("generated/packages.json", JSON.stringify(root, null, 2));
+  return root;
 }
 
 // src/test.ts
 async function get_package_json_length() {
-  const ans = await read_package_json(["C:\\yigal\\million_try3", "."]);
+  const ans = await read_package_json(["c:\\yigal\\collect_watchers", "c:\\yigal\\million_try3"]);
   return Object.keys(ans).length;
 }
 if (import.meta.main) {

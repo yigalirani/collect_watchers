@@ -1,5 +1,5 @@
 {
-    "name": "validator_try",
+    "name": "collect_watchers",
     "version": "1.0.0",
     "description": "",
     "license": "ISC",
@@ -7,30 +7,24 @@
     "type": "module",
     "main": "dist/index.js",
     "types": "types/src/index.d.ts",
-    "watchers": {
-        "watch": [
-            "src",
-            "package.json"
-        ],
-        "tsc": {
-            "cmd": "npx tsc",
-            "watch": ["tsconfig.json"]
-        },
-        "build": {
-          "cmd": "node ./bin/run_build.ts",
-          "watch": "./bin/run_build.ts"
-        },
-        "eslint": {
-            "env": {
-                "timing": 1
-            },
-            "cmd": "npx eslint . --debug --color",
-            "watch":"eslint.config.mjs"
-        }
-    },
+    "watchers":{
+      "$watch":[
+        "src",
+        "package.json",
+        "tsconfig.json",
+        "bin/run_build.ts"
+      ],
+      "test":"dist/test.js",
+      "eslint":{
+        "watch":["$watch","eslint.config.mjs"],
+        "filter":"eslint_filter"
+      }
+    },        
     "scripts": {
-        "test": {"cmd":"node dist/test.js"},
-        "build":{"cmd":"node ./bin/run_build.ts"}
+        "test": "node dist/test.js",
+        "build":"node ./bin/run_build.ts",
+        "eslint": "npx eslint . --debug --color",
+        "tsc":"npx tsc"
     },
     "keywords": [],
     "devDependencies": {
@@ -42,7 +36,7 @@
         "typescript-eslint": "8.46.3"
     },
     "dependencies": {
-        "@yigal/base_types": "1.3.0",
+        "@yigal/base_types": "1.4.0",
         "@yigal/watch_runner": "^2.0.0"
     }
 }
